@@ -105,7 +105,7 @@ export function DashboardClient() {
     <PageFade className="mx-auto max-w-6xl space-y-8">
       <PageHeader title="统计看板" description="Stats · Recharts · 最近操作（MOCK）" />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
         {loading || !stats
           ? Array.from({ length: 4 }).map((_, i) => (
               <Card key={i}>
@@ -124,7 +124,7 @@ export function DashboardClient() {
               return (
                 <Card key={s.key} className="transition-shadow duration-300 hover:shadow-card-md">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">{s.title}</CardTitle>
+                    <CardTitle className="text-lg font-medium text-muted-foreground">{s.title}</CardTitle>
                     <Icon className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
