@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field-error";
 import type { ApiResponse } from "@/types/api";
 
 export function RegisterForm() {
@@ -36,10 +37,10 @@ export function RegisterForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>注册</CardTitle>
-        <p className="text-sm text-muted-foreground">由热配置 auth.register_open 控制是否开放</p>
+    <Card className="w-full max-w-md border-border/80 shadow-card-md">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-xl font-semibold tracking-tight">注册</CardTitle>
+        <p className="text-sm leading-relaxed text-muted-foreground">由热配置 auth.register_open 控制是否开放</p>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
@@ -62,9 +63,9 @@ export function RegisterForm() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          {err ? <p className="text-sm text-destructive">{err}</p> : null}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "提交中…" : "注册"}
+          <FieldError message={err} />
+          <Button type="submit" className="w-full transition-all duration-300" loading={loading}>
+            注册
           </Button>
         </form>
       </CardContent>

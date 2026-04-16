@@ -18,7 +18,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button type="button" variant="outline" size="sm" className="h-9 gap-2 px-3" disabled aria-hidden>
+      <Button type="button" variant="outline" size="sm" className="h-9 gap-2 px-3 transition-all duration-300" disabled aria-hidden>
         <Sun className="h-4 w-4 opacity-50" />
         <span className="text-xs">主题</span>
       </Button>
@@ -40,7 +40,7 @@ export function ThemeToggle() {
       type="button"
       variant="outline"
       size="sm"
-      className="h-9 gap-2 px-3"
+      className="h-9 gap-2 px-3 transition-all duration-300"
       onClick={cycle}
       title={`当前：${label}，点击切换`}
       aria-label={`主题：${label}，点击在浅色、深色、跟随系统间切换`}

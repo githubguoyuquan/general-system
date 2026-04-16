@@ -3,10 +3,12 @@
 import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field-error";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function LoginForm() {
   const router = useRouter();
@@ -33,11 +35,11 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-[calc(100dvh-3.5rem)] items-center justify-center p-6 bg-muted/30">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>登录</CardTitle>
-          <p className="text-sm text-muted-foreground">Auth.js Credentials · OAuth 可在环境变量就绪后启用</p>
+    <div className="flex min-h-[calc(100dvh-3.5rem)] items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md border-border/80 shadow-card-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-xl font-semibold tracking-tight">登录</CardTitle>
+          <CardDescription>Auth.js Credentials · 配置 OAuth 环境变量后可启用第三方登录</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
@@ -56,9 +58,9 @@ function LoginForm() {
                 required
               />
             </div>
-            {err && <p className="text-sm text-destructive">{err}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "登录中…" : "登录"}
+            <FieldError message={err} />
+            <Button type="submit" className="w-full transition-all duration-300" loading={loading}>
+              登录
             </Button>
           </form>
         </CardContent>
@@ -67,22 +69,27 @@ function LoginForm() {
   );
 }
 
+function LoginFallback() {
+  return (
+    <div className="flex min-h-[calc(100dvh-3.5rem)] items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md border-border/80 shadow-card-md">
+        <CardHeader>
+          <Skeleton className="h-7 w-24" />
+          <Skeleton className="mt-2 h-4 w-full max-w-sm" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[calc(100dvh-3.5rem)] items-center justify-center p-6 bg-muted/30">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>登录</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">加载中…</p>
-            </CardContent>
-          </Card>
-        </div>
-      }
-    >
+    <Suspense fallback={<LoginFallback />}>
       <LoginForm />
     </Suspense>
   );

@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { PageFade } from "@/components/page-fade";
+import { FieldError } from "@/components/ui/field-error";
+import { PageHeader } from "@/components/ui/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,22 +69,19 @@ export function AccountClient({ user }: AccountClientProps) {
 
   return (
     <PageFade className="mx-auto max-w-2xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">个人中心</h1>
-        <p className="text-sm text-muted-foreground mt-1">资料 · 安全 · 通知（Tabs + zod + Sonner）</p>
-      </div>
+      <PageHeader title="个人中心" description="资料 · 安全 · 通知（Tabs + zod + Sonner）" />
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-auto flex-wrap gap-1 sm:flex-nowrap">
-          <TabsTrigger value="profile" className="gap-1.5">
+        <TabsList className="grid h-auto w-full grid-cols-3 flex-wrap gap-1 sm:flex-nowrap">
+          <TabsTrigger value="profile" className="gap-1.5 transition-all duration-300">
             <User className="h-4 w-4 shrink-0" />
             资料
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-1.5">
+          <TabsTrigger value="security" className="gap-1.5 transition-all duration-300">
             <Shield className="h-4 w-4 shrink-0" />
             安全
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-1.5">
+          <TabsTrigger value="notifications" className="gap-1.5 transition-all duration-300">
             <Bell className="h-4 w-4 shrink-0" />
             通知
           </TabsTrigger>
@@ -132,26 +131,20 @@ export function AccountClient({ user }: AccountClientProps) {
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword">当前密码</Label>
                   <Input id="currentPassword" type="password" autoComplete="current-password" {...securityForm.register("currentPassword")} />
-                  {securityForm.formState.errors.currentPassword ? (
-                    <p className="text-sm text-destructive">{securityForm.formState.errors.currentPassword.message}</p>
-                  ) : null}
+                  <FieldError message={securityForm.formState.errors.currentPassword?.message} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">新密码</Label>
                   <Input id="newPassword" type="password" autoComplete="new-password" {...securityForm.register("newPassword")} />
-                  {securityForm.formState.errors.newPassword ? (
-                    <p className="text-sm text-destructive">{securityForm.formState.errors.newPassword.message}</p>
-                  ) : null}
+                  <FieldError message={securityForm.formState.errors.newPassword?.message} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">确认新密码</Label>
                   <Input id="confirmPassword" type="password" autoComplete="new-password" {...securityForm.register("confirmPassword")} />
-                  {securityForm.formState.errors.confirmPassword ? (
-                    <p className="text-sm text-destructive">{securityForm.formState.errors.confirmPassword.message}</p>
-                  ) : null}
+                  <FieldError message={securityForm.formState.errors.confirmPassword?.message} />
                 </div>
-                <Button type="submit" disabled={securityForm.formState.isSubmitting}>
-                  {securityForm.formState.isSubmitting ? "校验中…" : "更新密码"}
+                <Button type="submit" className="transition-all duration-300" loading={securityForm.formState.isSubmitting}>
+                  更新密码
                 </Button>
               </form>
             </CardContent>
@@ -180,7 +173,7 @@ export function AccountClient({ user }: AccountClientProps) {
                 </div>
                 <Switch id="marketing" checked={marketingOn} onCheckedChange={setMarketingOn} />
               </div>
-              <Button type="button" variant="outline" onClick={saveNotificationPrefs}>
+              <Button type="button" variant="outline" className="transition-all duration-300" onClick={saveNotificationPrefs}>
                 保存偏好
               </Button>
             </CardContent>

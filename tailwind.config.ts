@@ -9,6 +9,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-geist)", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -27,6 +31,28 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        brand: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+          muted: "hsl(var(--brand-muted))",
+        },
+      },
+      boxShadow: {
+        focus: "0 0 0 1px hsl(var(--ring) / 0.45), 0 0 0 4px hsl(var(--ring-glow) / 0.2)",
+        card: "var(--shadow-card)",
+        "card-md": "var(--shadow-card-md)",
+      },
+      keyframes: {
+        "form-error-shake": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "18%": { transform: "translateX(-6px)" },
+          "36%": { transform: "translateX(6px)" },
+          "54%": { transform: "translateX(-4px)" },
+          "72%": { transform: "translateX(4px)" },
+        },
+      },
+      animation: {
+        "form-error-shake": "form-error-shake 0.45s ease-in-out",
       },
     },
   },

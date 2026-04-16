@@ -2,6 +2,7 @@
 
 import { Activity, ArrowDownRight, ArrowUpRight, ShoppingCart, Users, Wallet } from "lucide-react";
 import { PageFade } from "@/components/page-fade";
+import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
@@ -20,11 +21,8 @@ export function DashboardClient() {
   const { stats, series, activities, loading } = useDashboardData();
 
   return (
-    <PageFade className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">统计看板</h1>
-        <p className="text-sm text-muted-foreground mt-1">Stats · Recharts · 最近操作（MOCK）</p>
-      </div>
+    <PageFade className="mx-auto max-w-6xl space-y-8">
+      <PageHeader title="统计看板" description="Stats · Recharts · 最近操作（MOCK）" />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {loading || !stats
@@ -43,13 +41,13 @@ export function DashboardClient() {
               const Icon = iconMap[s.icon];
               const up = s.trend === "up";
               return (
-                <Card key={s.key}>
+                <Card key={s.key} className="transition-shadow duration-300 hover:shadow-card-md">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">{s.title}</CardTitle>
                     <Icon className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{s.value}</div>
+                    <div className="text-2xl font-semibold tracking-tight">{s.value}</div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                       {up ? <ArrowUpRight className="h-3 w-3 text-emerald-500" /> : <ArrowDownRight className="h-3 w-3 text-amber-500" />}
                       <span className={up ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}>{s.delta}</span>
@@ -61,7 +59,7 @@ export function DashboardClient() {
             })}
       </div>
 
-      <Card>
+      <Card className="transition-shadow duration-300 hover:shadow-card-md">
         <CardHeader>
           <CardTitle>近七日用户增长</CardTitle>
         </CardHeader>
@@ -85,7 +83,7 @@ export function DashboardClient() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="transition-shadow duration-300 hover:shadow-card-md">
         <CardHeader>
           <CardTitle>最近操作记录</CardTitle>
         </CardHeader>
@@ -97,9 +95,12 @@ export function DashboardClient() {
               ))}
             </div>
           ) : (
-            <ul className="divide-y divide-border">
+            <ul className="divide-y divide-border/70">
               {activities.map((a) => (
-                <li key={a.id} className="flex flex-col gap-1 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <li
+                  key={a.id}
+                  className="flex flex-col gap-1 py-3 text-sm transition-colors duration-300 hover:bg-muted/25 sm:flex-row sm:items-center sm:justify-between sm:rounded-lg sm:px-2"
+                >
                   <div>
                     <span className="font-medium">{a.action}</span>
                     <span className="text-muted-foreground"> · {a.target}</span>

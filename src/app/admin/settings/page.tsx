@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useUiStore } from "@/hooks/use-ui-store";
 import type { ApiResponse } from "@/types/api";
@@ -22,6 +24,8 @@ export default function AdminSettingsPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [savingFlags, setSavingFlags] = useState(false);
   const [featureFlags, setFeatureFlags] = useState<AppFeatureFlags>(defaultFlags);
   const settingsMessage = useUiStore((s) => s.settingsMessage);
   const setSettingsMessage = useUiStore((s) => s.setSettingsMessage);
@@ -52,43 +56,53 @@ export default function AdminSettingsPage() {
   }, [load]);
 
   async function saveRow(key: string) {
+    setSavingKey(key);
     setSettingsMessage(null);
-    const raw = drafts[key];
-    let parsed: unknown = raw;
     try {
-      parsed = JSON.parse(raw);
-    } catch {
-      parsed = raw;
-    }
-    const res = await fetch("/api/admin/config", {
-      method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, value: parsed }),
-    });
-    const j = (await res.json()) as ApiResponse<Row>;
-    if (j.code === 0) {
-      setSettingsMessage(`已保存：${key}`);
-      await load();
-    } else {
-      setSettingsMessage(j.message || "保存失败");
+      const raw = drafts[key];
+      let parsed: unknown = raw;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = raw;
+      }
+      const res = await fetch("/api/admin/config", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value: parsed }),
+      });
+      const j = (await res.json()) as ApiResponse<Row>;
+      if (j.code === 0) {
+        setSettingsMessage(`已保存：${key}`);
+        await load();
+      } else {
+        setSettingsMessage(j.message || "保存失败");
+      }
+    } finally {
+      setSavingKey(null);
     }
   }
 
   async function saveFeatureFlags() {
+    setSavingFlags(true);
     setSettingsMessage(null);
-    const res = await fetch("/api/admin/config", {
-      method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: HOT_CONFIG.APP_FEATURES, value: featureFlags }),
-    });
-    const j = (await res.json()) as ApiResponse<Row>;
-    if (j.code === 0) {
-      setSettingsMessage("功能开关已保存（app.features）");
-      await load();
-    } else {
-      setSettingsMessage(j.message || "保存失败");
+    try {
+      const res = await fetch("/api/admin/config", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: HOT_CONFIG.APP_FEATURES, value: featureFlags }),
+      });
+      const j = (await res.json()) as ApiResponse<Row>;
+      if (j.code === 0) {
+        setSettingsMessage("功能开关已保存（app.features）");
+        await load();
+      } else {
+        setSettingsMessage(j.message || "保存失败");
+      }
+    } finally {
+      setSavingFlags(false);
     }
   }
 
@@ -97,15 +111,19 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div>
-        <h1 className="text-2xl font-bold">系统配置</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          <strong>热配置</strong>存于数据库，经本页修改后经缓存失效后<strong>即时生效</strong>。
-          <strong>冷配置</strong>（密钥、DB 连接等）仅来自 .env，改后需<strong>重启进程</strong>（见{" "}
-          <code className="rounded bg-muted px-1">src/lib/cold-config.ts</code>）。
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <PageHeader
+        title="系统配置"
+        description={
+          <>
+            <strong className="font-medium text-foreground">热配置</strong>
+            存于数据库，经本页修改后经缓存失效后<strong className="font-medium text-foreground">即时生效</strong>。
+            <strong className="font-medium text-foreground">冷配置</strong>（密钥、DB 连接等）仅来自 .env，改后需
+            <strong className="font-medium text-foreground">重启进程</strong>（见{" "}
+            <code className="rounded-md border border-border/60 bg-muted/50 px-1.5 py-0.5 text-xs">src/lib/cold-config.ts</code>）。
+          </>
+        }
+      />
 
       <Card>
         <CardHeader>
@@ -148,7 +166,7 @@ export default function AdminSettingsPage() {
               <label htmlFor="ff-regnav">showRegisterNav — 导航显示「注册」（仍需 auth.register_open）</label>
             </li>
           </ul>
-          <Button type="button" onClick={() => void saveFeatureFlags()}>
+          <Button type="button" className="transition-all duration-300" loading={savingFlags} onClick={() => void saveFeatureFlags()}>
             保存功能开关
           </Button>
         </CardContent>
@@ -161,7 +179,11 @@ export default function AdminSettingsPage() {
         <CardContent className="space-y-4">
           {settingsMessage ? <p className="text-sm text-primary">{settingsMessage}</p> : null}
           {loading ? (
-            <p className="text-sm text-muted-foreground">加载中…</p>
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -185,7 +207,14 @@ export default function AdminSettingsPage() {
                       />
                     </TableCell>
                     <TableCell>
-                      <Button type="button" size="sm" variant="outline" onClick={() => void saveRow(r.key)}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="transition-all duration-300"
+                        loading={savingKey === r.key}
+                        onClick={() => void saveRow(r.key)}
+                      >
                         保存
                       </Button>
                     </TableCell>
@@ -194,7 +223,7 @@ export default function AdminSettingsPage() {
               </TableBody>
             </Table>
           )}
-          <Button type="button" variant="ghost" size="sm" onClick={() => void load()}>
+          <Button type="button" variant="ghost" size="sm" className="transition-all duration-300" onClick={() => void load()}>
             刷新列表
           </Button>
         </CardContent>

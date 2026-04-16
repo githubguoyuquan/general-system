@@ -25,10 +25,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   if (maintenance) {
     return (
       <html lang="zh-CN" suppressHydrationWarning>
-        <body className={`${geist.variable} ${geistMono.variable} font-sans min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-100`}>
+        <body
+          className={`${geist.variable} ${geistMono.variable} font-sans min-h-screen flex items-center justify-center bg-[hsl(240_4%_11%)] text-[hsl(240_5%_92%)] dark`}
+        >
           <div className="text-center space-y-2 p-8">
-            <p className="text-xl font-semibold">系统维护中</p>
-            <p className="text-sm text-zinc-400">maintenance.mode 已在配置中心开启</p>
+            <p className="text-xl font-semibold tracking-tight">系统维护中</p>
+            <p className="text-sm text-[hsl(220_5%_58%)]">maintenance.mode 已在配置中心开启</p>
           </div>
         </body>
       </html>
@@ -37,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased min-h-screen`}>
+      <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased min-h-screen bg-[hsl(var(--surface-base))]`}>
         <Providers>{children}</Providers>
       </body>
     </html>

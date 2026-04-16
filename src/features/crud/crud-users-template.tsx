@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MoreHorizontal, Pencil, Plus, Search, Trash2, Eye } from "lucide-react";
 import { PageFade } from "@/components/page-fade";
+import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,7 @@ import { MOCK_DEPARTMENTS, MOCK_ROLE_OPTIONS, MOCK_STATUS_OPTIONS } from "@/lib/
 /** 数据表格 CRUD 模板：逻辑在 hook + mock-user.service，本组件仅负责 UI */
 export function CrudUsersTemplate() {
   const u = useMockUsers(5);
+  const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewUser, setViewUser] = useState<MockUser | null>(null);
   const [editing, setEditing] = useState<MockUser | null>(null);
@@ -81,15 +83,20 @@ export function CrudUsersTemplate() {
   }
 
   async function submitForm() {
-    await u.createOrUpdate({
-      id: editing?.id,
-      email: form.email.trim(),
-      name: form.name.trim(),
-      role: form.role,
-      status: form.status,
-      department: form.department,
-    });
-    setDialogOpen(false);
+    setSaving(true);
+    try {
+      await u.createOrUpdate({
+        id: editing?.id,
+        email: form.email.trim(),
+        name: form.name.trim(),
+        role: form.role,
+        status: form.status,
+        department: form.department,
+      });
+      setDialogOpen(false);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleDelete(id: string) {
@@ -98,19 +105,21 @@ export function CrudUsersTemplate() {
   }
 
   return (
-    <PageFade className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">数据表格 CRUD</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          搜索 / 筛选 / 分页 · 弹窗表单 · 行操作菜单。数据来自{" "}
-          <code className="rounded bg-muted px-1 text-xs">mock-user.service</code>
-        </p>
-      </div>
+    <PageFade className="mx-auto max-w-6xl space-y-6">
+      <PageHeader
+        title="数据表格 CRUD"
+        description={
+          <>
+            搜索 / 筛选 / 分页 · 弹窗表单 · 行操作菜单。数据来自{" "}
+            <code className="rounded-md border border-border/60 bg-muted/50 px-1.5 py-0.5 text-xs">mock-user.service</code>
+          </>
+        }
+      />
 
       <Card>
         <CardHeader className="flex flex-col gap-4 space-y-0 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-lg">用户列表</CardTitle>
-          <Button type="button" size="sm" onClick={openCreate}>
+          <CardTitle className="text-lg font-semibold tracking-tight">用户列表</CardTitle>
+          <Button type="button" size="sm" className="transition-all duration-300" onClick={openCreate}>
             <Plus className="mr-2 h-4 w-4" />
             新增
           </Button>
@@ -178,7 +187,7 @@ export function CrudUsersTemplate() {
             </div>
           </div>
 
-          <div className="rounded-md border overflow-x-auto">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -206,18 +215,18 @@ export function CrudUsersTemplate() {
                         <TableCell className="font-medium">{row.name}</TableCell>
                         <TableCell className="text-muted-foreground text-sm">{row.email}</TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{row.role}</Badge>
+                          <Badge variant={row.role === "admin" ? "default" : "secondary"}>{row.role}</Badge>
                         </TableCell>
                         <TableCell>{row.department}</TableCell>
                         <TableCell>
-                          <Badge variant={row.status === "active" ? "default" : "outline"}>
+                          <Badge variant={row.status === "active" ? "success" : "warning"}>
                             {row.status === "active" ? "启用" : "停用"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 transition-all duration-300">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -338,10 +347,16 @@ export function CrudUsersTemplate() {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button type="button" variant="outline" className="transition-all duration-300" onClick={() => setDialogOpen(false)}>
               取消
             </Button>
-            <Button type="button" onClick={() => void submitForm()} disabled={!form.email || !form.name}>
+            <Button
+              type="button"
+              className="transition-all duration-300"
+              loading={saving}
+              disabled={!form.email || !form.name}
+              onClick={() => void submitForm()}
+            >
               保存
             </Button>
           </DialogFooter>

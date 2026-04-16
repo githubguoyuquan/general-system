@@ -8,6 +8,8 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PageFade } from "@/components/page-fade";
+import { FieldError } from "@/components/ui/field-error";
+import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,10 +57,7 @@ export function AdvancedFormTemplate() {
 
   return (
     <PageFade className="mx-auto max-w-2xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">复杂表单模板</h1>
-        <p className="text-sm text-muted-foreground mt-1">react-hook-form · zod · Popover 城市搜索 · 日期 · Toast</p>
-      </div>
+      <PageHeader title="复杂表单模板" description="react-hook-form · zod · Popover 城市搜索 · 日期 · Toast" />
 
       <Card>
         <CardHeader>
@@ -79,7 +78,10 @@ export function AdvancedFormTemplate() {
                       { v: "pro", l: "专业版" },
                       { v: "team", l: "团队版" },
                     ].map((o) => (
-                      <div key={o.v} className="flex items-center space-x-2 rounded-md border p-3">
+                      <div
+                        key={o.v}
+                        className="flex items-center space-x-2 rounded-lg border border-border/80 bg-card/50 p-3 shadow-sm transition-all duration-300 hover:border-primary/25 hover:shadow-card"
+                      >
                         <RadioGroupItem value={o.v} id={`plan-${o.v}`} />
                         <Label htmlFor={`plan-${o.v}`} className="font-normal cursor-pointer">
                           {o.l}
@@ -89,9 +91,7 @@ export function AdvancedFormTemplate() {
                   </RadioGroup>
                 )}
               />
-              {form.formState.errors.plan ? (
-                <p className="text-sm text-destructive">{form.formState.errors.plan.message}</p>
-              ) : null}
+              <FieldError message={form.formState.errors.plan?.message} />
             </div>
 
             <Separator />
@@ -121,14 +121,12 @@ export function AdvancedFormTemplate() {
                   </div>
                 )}
               />
-              {form.formState.errors.skills ? (
-                <p className="text-sm text-destructive">{form.formState.errors.skills.message}</p>
-              ) : null}
+              <FieldError message={form.formState.errors.skills?.message} />
             </div>
 
             <Separator />
 
-            <div className="flex items-center justify-between rounded-md border p-4">
+            <div className="flex items-center justify-between rounded-lg border border-border/80 bg-card/40 p-4 shadow-sm transition-shadow duration-300 hover:shadow-card">
               <div className="space-y-0.5">
                 <Label htmlFor="newsletter">订阅产品动态</Label>
                 <p className="text-xs text-muted-foreground">关闭后仅保留必要通知邮件</p>
@@ -212,9 +210,7 @@ export function AdvancedFormTemplate() {
                     </Popover>
                   )}
                 />
-                {form.formState.errors.city ? (
-                  <p className="text-sm text-destructive">{form.formState.errors.city.message}</p>
-                ) : null}
+                <FieldError message={form.formState.errors.city?.message} />
               </div>
             </div>
 
@@ -241,13 +237,11 @@ export function AdvancedFormTemplate() {
                   </Popover>
                 )}
               />
-              {form.formState.errors.birthDate ? (
-                <p className="text-sm text-destructive">{form.formState.errors.birthDate.message}</p>
-              ) : null}
+              <FieldError message={form.formState.errors.birthDate?.message} />
             </div>
 
-            <Button type="submit" className="w-full sm:w-auto" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "提交中…" : "提交"}
+            <Button type="submit" className="w-full transition-all duration-300 sm:w-auto" loading={form.formState.isSubmitting}>
+              提交
             </Button>
           </form>
         </CardContent>

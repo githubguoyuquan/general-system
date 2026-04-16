@@ -17,9 +17,9 @@ export default async function RegisterPage() {
   if (!open) notFound();
 
   return (
-    <div className="flex min-h-[calc(100dvh-3.5rem)] flex-col items-center justify-center gap-4 bg-muted/30 p-6">
+    <div className="flex min-h-[calc(100dvh-3.5rem)] flex-col items-center justify-center gap-4 px-4 py-12">
       <RegisterForm />
-      <Link href="/login" className="text-sm text-muted-foreground underline">
+      <Link href="/login" className="text-sm text-muted-foreground underline-offset-4 transition-colors duration-300 hover:text-primary">
         已有账号？去登录
       </Link>
     </div>
