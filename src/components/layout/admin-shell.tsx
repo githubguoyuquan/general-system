@@ -54,12 +54,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border/60 bg-card/80 shadow-sm backdrop-blur-md transition-all duration-300 ease-out supports-[backdrop-filter]:bg-card/70 md:static md:z-auto",
+          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-card shadow-sm transition-all duration-300 ease-out md:static md:z-auto",
           collapsed ? "w-[72px]" : "w-60",
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
-        <div className={cn("flex h-14 items-center border-b border-border/50 px-3", collapsed ? "justify-center" : "justify-between gap-2")}>
+        <div className={cn("flex h-14 items-center border-b border-border px-3", collapsed ? "justify-center" : "justify-between gap-2")}>
           {!collapsed ? (
             <Link href="/admin/dashboard" className="truncate text-sm font-semibold tracking-tight text-foreground transition-colors duration-300 hover:text-primary">
               管理后台
