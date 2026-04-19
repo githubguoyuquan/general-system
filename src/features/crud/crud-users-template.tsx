@@ -30,43 +30,60 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useMockUsers } from "@/hooks/use-mock-users";
 import type { MockUser } from "@/lib/mock";
 import { MOCK_DEPARTMENTS, MOCK_ROLE_OPTIONS, MOCK_STATUS_OPTIONS } from "@/lib/mock";
+import { getPageNumbers } from "@/lib/pagination";
 
-/** 数据表格 CRUD 模板：逻辑在 hook + mock-user.service，本组件仅负责 UI */
-export function CrudUsersTemplate() {
-  const u = useMockUsers(5);
-  const [saving, setSaving] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [viewUser, setViewUser] = useState<MockUser | null>(null);
-  const [editing, setEditing] = useState<MockUser | null>(null);
-  const [form, setForm] = useState<{
-    email: string;
-    name: string;
-    role: MockUser["role"];
-    status: MockUser["status"];
-    department: string;
-  }>({
+type UserFormState = {
+  email: string;
+  name: string;
+  role: MockUser["role"];
+  status: MockUser["status"];
+  department: string;
+};
+
+function emptyUserForm(): UserFormState {
+  return {
     email: "",
     name: "",
     role: "user",
     status: "active",
     department: MOCK_DEPARTMENTS[0]!,
-  });
+  };
+}
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(u.total / u.pageSize)), [u.total, u.pageSize]);
+/** 数据表格 CRUD 模板：逻辑在 hook + mock-user.service，本组件仅负责 UI */
+export function CrudUsersTemplate() {
+  const {
+    items,
+    total,
+    page,
+    setPage,
+    pageSize,
+    q,
+    setQ,
+    role,
+    setRole,
+    status,
+    setStatus,
+    loading,
+    createOrUpdate,
+    remove,
+  } = useMockUsers(5);
+  const [saving, setSaving] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewUser, setViewUser] = useState<MockUser | null>(null);
+  const [editing, setEditing] = useState<MockUser | null>(null);
+  const [form, setForm] = useState<UserFormState>(emptyUserForm);
+
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize]);
+  const pageButtons = useMemo(() => getPageNumbers(page, totalPages, 7), [page, totalPages]);
 
   useEffect(() => {
-    if (u.page > totalPages) u.setPage(totalPages);
-  }, [u.page, totalPages, u.setPage]); // eslint-disable-line react-hooks/exhaustive-deps -- hook 返回对象每帧变，不列入 u
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages, setPage]);
 
   function openCreate() {
     setEditing(null);
-    setForm({
-      email: "",
-      name: "",
-      role: "user",
-      status: "active",
-      department: MOCK_DEPARTMENTS[0]!,
-    });
+    setForm(emptyUserForm());
     setDialogOpen(true);
   }
 
@@ -85,7 +102,7 @@ export function CrudUsersTemplate() {
   async function submitForm() {
     setSaving(true);
     try {
-      await u.createOrUpdate({
+      await createOrUpdate({
         id: editing?.id,
         email: form.email.trim(),
         name: form.name.trim(),
@@ -101,7 +118,7 @@ export function CrudUsersTemplate() {
 
   async function handleDelete(id: string) {
     if (!confirm("确定删除该用户？（MOCK 数据）")) return;
-    await u.remove(id);
+    await remove(id);
   }
 
   return (
@@ -133,10 +150,10 @@ export function CrudUsersTemplate() {
                 <Input
                   className="pl-9"
                   placeholder="姓名 / 邮箱 / 部门"
-                  value={u.q}
+                  value={q}
                   onChange={(e) => {
-                    u.setQ(e.target.value);
-                    u.setPage(1);
+                    setQ(e.target.value);
+                    setPage(1);
                   }}
                 />
               </div>
@@ -144,10 +161,10 @@ export function CrudUsersTemplate() {
             <div className="w-full min-w-[140px] space-y-1.5 md:w-40">
               <Label>角色</Label>
               <Select
-                value={u.role}
+                value={role}
                 onValueChange={(v) => {
-                  u.setRole(v);
-                  u.setPage(1);
+                  setRole(v);
+                  setPage(1);
                 }}
               >
                 <SelectTrigger>
@@ -166,10 +183,10 @@ export function CrudUsersTemplate() {
             <div className="w-full min-w-[140px] space-y-1.5 md:w-40">
               <Label>状态</Label>
               <Select
-                value={u.status}
+                value={status}
                 onValueChange={(v) => {
-                  u.setStatus(v);
-                  u.setPage(1);
+                  setStatus(v);
+                  setPage(1);
                 }}
               >
                 <SelectTrigger>
@@ -200,7 +217,7 @@ export function CrudUsersTemplate() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {u.loading
+                {loading
                   ? Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i}>
                         {Array.from({ length: 6 }).map((__, j) => (
@@ -210,7 +227,7 @@ export function CrudUsersTemplate() {
                         ))}
                       </TableRow>
                     ))
-                  : u.items.map((row) => (
+                  : items.map((row) => (
                       <TableRow key={row.id}>
                         <TableCell className="font-medium">{row.name}</TableCell>
                         <TableCell className="text-muted-foreground text-sm">{row.email}</TableCell>
@@ -253,25 +270,33 @@ export function CrudUsersTemplate() {
             </Table>
           </div>
 
-          {!u.loading && u.items.length === 0 ? (
+          {!loading && items.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">暂无数据</p>
           ) : null}
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm text-muted-foreground">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-muted-foreground">
             <span>
-              共 {u.total} 条 · 第 {u.page} / {totalPages} 页
+              共 {total} 条 · 第 {page} / {totalPages} 页
             </span>
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" size="sm" disabled={u.page <= 1 || u.loading} onClick={() => u.setPage((p) => p - 1)}>
+            <div className="flex flex-wrap items-center justify-end gap-1">
+              <Button type="button" variant="outline" size="sm" disabled={page <= 1 || loading} onClick={() => setPage((p) => p - 1)}>
                 上一页
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={u.page >= totalPages || u.loading}
-                onClick={() => u.setPage((p) => p + 1)}
-              >
+              {pageButtons.map((p) => (
+                <Button
+                  key={p}
+                  type="button"
+                  variant={page === p ? "default" : "outline"}
+                  size="sm"
+                  className="min-w-9 px-2"
+                  disabled={loading}
+                  aria-current={page === p ? "page" : undefined}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </Button>
+              ))}
+              <Button type="button" variant="outline" size="sm" disabled={page >= totalPages || loading} onClick={() => setPage((p) => p + 1)}>
                 下一页
               </Button>
             </div>

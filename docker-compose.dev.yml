@@ -22,7 +22,9 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/general_system?schema=public
       AUTH_SECRET: ${AUTH_SECRET}
       AUTH_TRUST_HOST: "true"
-    command: sh -c "npx prisma db push && npm run dev"
+    # schema 由本机/CI 执行 make db-push（或 compose run app-dev npm run db:push）同步，避免每次重启都 push
+    # npm run dev 会执行 predev（prisma generate），同步命名卷 node_modules 与 bind-mount 的 prisma/schema
+    command: npm run dev
     volumes:
       - ./:/app
       - node_modules:/app/node_modules

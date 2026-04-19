@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -66,6 +66,104 @@ async function main() {
         key: row.key,
         value: JSON.stringify(row.value),
         description: row.description,
+      },
+    });
+  }
+
+  /** 数据字典示例（表 `dictionaries`，与 SystemConfig 分表） */
+  const dictSeed: {
+    key: string;
+    label: string;
+    parentKey: string | null;
+    description?: string;
+    type: "STRING" | "COLOR" | "NUMBER" | "BOOLEAN" | "JSON" | "IMAGE";
+    valueString?: string | null;
+    valueNumber?: number | null;
+    valueBoolean?: boolean | null;
+    valueJson?: Prisma.InputJsonValue;
+    sortOrder?: number;
+  }[] = [
+    {
+      key: "USER_STATUS",
+      label: "用户状态",
+      parentKey: null,
+      description: "账号状态分组（示例）",
+      type: "STRING",
+      valueString: "",
+      sortOrder: 0,
+    },
+    {
+      key: "USER_STATUS_ACTIVE",
+      label: "正常",
+      parentKey: "USER_STATUS",
+      type: "COLOR",
+      valueString: "#22c55e",
+      sortOrder: 0,
+    },
+    {
+      key: "USER_STATUS_DISABLED",
+      label: "停用",
+      parentKey: "USER_STATUS",
+      type: "COLOR",
+      valueString: "#ef4444",
+      sortOrder: 1,
+    },
+    {
+      key: "PAYMENT_METHOD",
+      label: "支付方式",
+      parentKey: null,
+      description: "下单可选支付方式（示例）",
+      type: "STRING",
+      valueString: "",
+      sortOrder: 10,
+    },
+    {
+      key: "PAYMENT_WECHAT",
+      label: "微信支付",
+      parentKey: "PAYMENT_METHOD",
+      type: "STRING",
+      valueString: "wechat",
+      sortOrder: 0,
+    },
+    {
+      key: "PAYMENT_ALIPAY",
+      label: "支付宝",
+      parentKey: "PAYMENT_METHOD",
+      type: "STRING",
+      valueString: "alipay",
+      sortOrder: 1,
+    },
+  ];
+
+  for (const e of dictSeed) {
+    const parentId = e.parentKey
+      ? (await prisma.dictionary.findUnique({ where: { key: e.parentKey }, select: { id: true } }))?.id ?? null
+      : null;
+    await prisma.dictionary.upsert({
+      where: { key: e.key },
+      create: {
+        key: e.key,
+        label: e.label,
+        description: e.description ?? null,
+        parentId,
+        type: e.type,
+        valueString: e.valueString ?? null,
+        valueNumber: e.valueNumber ?? null,
+        valueBoolean: e.valueBoolean ?? null,
+        valueJson: e.valueJson !== undefined ? e.valueJson : Prisma.JsonNull,
+        sortOrder: e.sortOrder ?? 0,
+        isActive: true,
+      },
+      update: {
+        label: e.label,
+        description: e.description ?? null,
+        parentId,
+        type: e.type,
+        valueString: e.valueString ?? null,
+        valueNumber: e.valueNumber ?? null,
+        valueBoolean: e.valueBoolean ?? null,
+        valueJson: e.valueJson !== undefined ? e.valueJson : Prisma.JsonNull,
+        sortOrder: e.sortOrder ?? 0,
       },
     });
   }

@@ -69,3 +69,39 @@ model SystemConfig {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// -----------------------------------------------------------------------------
+// 通用数据字典（与 SystemConfig 热配置分表）：树形层级 + 强类型取值
+// -----------------------------------------------------------------------------
+
+enum DictionaryValueType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+  COLOR
+  IMAGE
+}
+
+model Dictionary {
+  id           String               @id @default(cuid())
+  key          String               @unique
+  label        String
+  description  String?
+  parentId     String?
+  parent       Dictionary?          @relation("DictTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children     Dictionary[]         @relation("DictTree")
+  type         DictionaryValueType
+  valueString  String?              @db.Text
+  valueNumber  Float?
+  valueBoolean Boolean?
+  valueJson    Json?
+  sortOrder    Int                  @default(0)
+  isActive     Boolean              @default(true)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([parentId])
+  @@index([isActive])
+  @@map("dictionaries")
+}
