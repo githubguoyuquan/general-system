@@ -1,5 +1,6 @@
 import { Prisma, type DictionaryValueType } from "@prisma/client";
 import { assertPrismaClientReady, prisma } from "@/lib/prisma";
+import { queryDictionarySubtreeRows } from "@/lib/dictionary-subtree-query";
 import { logger } from "@/lib/logger";
 import { buildTreeForSubtree } from "@/lib/dictionary-tree";
 import type { DictionaryCreateInput, DictionaryFlatDTO, DictionaryNodeDTO, UpdateDictionaryInput } from "@/types/dictionary";
@@ -41,60 +42,26 @@ function toDTO(r: {
   };
 }
 
-/** 从内存列表收集某节点下全部后代 id（按 parentId 建邻接表后 BFS） */
-function collectDescendantIds(flat: { id: string; parentId: string | null }[], rootId: string): Set<string> {
-  const childrenOf = new Map<string, string[]>();
-  for (const f of flat) {
-    if (!f.parentId) continue;
-    if (!childrenOf.has(f.parentId)) childrenOf.set(f.parentId, []);
-    childrenOf.get(f.parentId)!.push(f.id);
-  }
-  const ids = new Set<string>([rootId]);
-  let frontier = [rootId];
-  while (frontier.length) {
-    const next: string[] = [];
-    for (const id of frontier) {
-      for (const cid of childrenOf.get(id) ?? []) {
-        if (!ids.has(cid)) {
-          ids.add(cid);
-          next.push(cid);
-        }
-      }
-    }
-    frontier = next;
-  }
-  return ids;
+/** 某根节点下的扁平子树：单次递归 CTE 拉子树行，避免全表 findMany 与大 IN 列表 */
+async function loadFlatSubtreeForRootId(rootId: string): Promise<DictionaryFlatDTO[]> {
+  assertPrismaClientReady();
+  const rows = await queryDictionarySubtreeRows(prisma, rootId);
+  return rows.map(toDTO);
 }
 
 /** 根据根节点 key 拉取整棵子树（含根），树形结构 */
 export async function getTreeByRootKey(rootKey: string): Promise<DictionaryNodeDTO | null> {
   const root = await dict().findUnique({ where: { key: rootKey } });
   if (!root) return null;
-  const flatAll = await dict().findMany({
-    orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
-  });
-  const dtoFlat = flatAll.map(toDTO);
-  const allowed = collectDescendantIds(
-    dtoFlat.map((r) => ({ id: r.id, parentId: r.parentId })),
-    root.id
-  );
-  const sub = dtoFlat.filter((r) => allowed.has(r.id));
-  return buildTreeForSubtree(sub, root.id);
+  const flat = await loadFlatSubtreeForRootId(root.id);
+  return buildTreeForSubtree(flat, root.id);
 }
 
 /** 平铺：某 key 根下所有节点（含根），按 sortOrder */
 export async function getFlatUnderRootKey(rootKey: string): Promise<DictionaryFlatDTO[]> {
   const root = await dict().findUnique({ where: { key: rootKey } });
   if (!root) return [];
-  const flatAll = await dict().findMany({
-    orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
-  });
-  const dtoFlat = flatAll.map(toDTO);
-  const allowed = collectDescendantIds(
-    dtoFlat.map((r) => ({ id: r.id, parentId: r.parentId })),
-    root.id
-  );
-  return dtoFlat.filter((r) => allowed.has(r.id));
+  return loadFlatSubtreeForRootId(root.id);
 }
 
 /** 管理端：全部条目 */
