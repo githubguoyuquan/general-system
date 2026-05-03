@@ -105,15 +105,15 @@ export function DashboardClient() {
     <PageFade className="mx-auto max-w-6xl space-y-8">
       <PageHeader title="统计看板" description="Stats · Recharts · 最近操作（MOCK）" />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         {loading || !stats
-          ? Array.from({ length: 4 }).map((_, i) => (
+            ? Array.from({ length: 4 }).map((_, i) => (
               <Card key={i}>
-                <CardHeader className="pb-2">
+                <CardHeader className="space-y-0 p-4 pb-2 md:p-6 md:pb-2">
                   <Skeleton className="h-4 w-24" />
                 </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-32 mb-2" />
+                <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+                  <Skeleton className="mb-2 h-8 w-32" />
                   <Skeleton className="h-3 w-20" />
                 </CardContent>
               </Card>
@@ -123,12 +123,12 @@ export function DashboardClient() {
               const up = s.trend === "up";
               return (
                 <Card key={s.key} className="transition-shadow duration-300 hover:shadow-card-md">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-lg font-medium text-muted-foreground">{s.title}</CardTitle>
+                  <CardHeader className="flex flex-row items-center justify-between gap-2 p-4 pb-2 md:p-6 md:pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground md:text-lg">{s.title}</CardTitle>
                     <Icon className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-semibold tracking-tight">{s.value}</div>
+                  <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+                    <div className="text-xl font-semibold tracking-tight tabular-nums md:text-2xl">{s.value}</div>
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                       {up ? <ArrowUpRight className="h-3 w-3 text-emerald-500" /> : <ArrowDownRight className="h-3 w-3 text-amber-500" />}
                       <span className={up ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}>{s.delta}</span>
