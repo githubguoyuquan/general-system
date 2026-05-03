@@ -121,6 +121,15 @@ export default async function HomePage() {
           ) : null}
         </div>
       ) : null}
+
+      <div className="mt-12 flex justify-center gap-6 text-[12px] text-muted-foreground">
+        <Link href="/m" className="hover:text-primary hover:underline">
+          移动端 /m
+        </Link>
+        <Link href="/docs" className="hover:text-primary hover:underline">
+          桌面文档
+        </Link>
+      </div>
     </main>
   );
 }

@@ -1,0 +1,235 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useUiStore } from "@/hooks/use-ui-store";
+import type { ApiResponse } from "@/types/api";
+import type { AppFeatureFlags } from "@/lib/features";
+import { HOT_CONFIG } from "@/lib/config-keys";
+
+type Row = { id: string; key: string; value: string; description: string | null };
+
+const defaultFlags: AppFeatureFlags = {
+  betaHome: false,
+  experimentalApi: false,
+  showRegisterNav: true,
+};
+
+export function AdminSettingsPanel() {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [savingFlags, setSavingFlags] = useState(false);
+  const [featureFlags, setFeatureFlags] = useState<AppFeatureFlags>(defaultFlags);
+  const settingsMessage = useUiStore((s) => s.settingsMessage);
+  const setSettingsMessage = useUiStore((s) => s.setSettingsMessage);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch("/api/admin/config", { credentials: "include" });
+    const json = (await res.json()) as ApiResponse<Row[]>;
+    if (json.code === 0 && Array.isArray(json.data)) {
+      setRows(json.data);
+      const d: Record<string, string> = {};
+      for (const r of json.data) d[r.key] = r.value;
+      setDrafts(d);
+      const fr = json.data.find((r) => r.key === HOT_CONFIG.APP_FEATURES);
+      if (fr?.value) {
+        try {
+          setFeatureFlags({ ...defaultFlags, ...(JSON.parse(fr.value) as AppFeatureFlags) });
+        } catch {
+          setFeatureFlags(defaultFlags);
+        }
+      }
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function saveRow(key: string) {
+    setSavingKey(key);
+    setSettingsMessage(null);
+    try {
+      const raw = drafts[key];
+      let parsed: unknown = raw;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = raw;
+      }
+      const res = await fetch("/api/admin/config", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value: parsed }),
+      });
+      const j = (await res.json()) as ApiResponse<Row>;
+      if (j.code === 0) {
+        setSettingsMessage(`已保存：${key}`);
+        await load();
+      } else {
+        setSettingsMessage(j.message || "保存失败");
+      }
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  async function saveFeatureFlags() {
+    setSavingFlags(true);
+    setSettingsMessage(null);
+    try {
+      const res = await fetch("/api/admin/config", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: HOT_CONFIG.APP_FEATURES, value: featureFlags }),
+      });
+      const j = (await res.json()) as ApiResponse<Row>;
+      if (j.code === 0) {
+        setSettingsMessage("功能开关已保存（app.features）");
+        await load();
+      } else {
+        setSettingsMessage(j.message || "保存失败");
+      }
+    } finally {
+      setSavingFlags(false);
+    }
+  }
+
+  function toggleFlag<K extends keyof AppFeatureFlags>(k: K) {
+    setFeatureFlags((prev) => ({ ...prev, [k]: !prev[k] }));
+  }
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-6">
+      <PageHeader
+        title="系统配置"
+        description={
+          <>
+            <strong className="font-medium text-foreground">热配置</strong>
+            存于数据库，经本页修改后经缓存失效后<strong className="font-medium text-foreground">即时生效</strong>。
+            <strong className="font-medium text-foreground">冷配置</strong>（密钥、DB 连接等）仅来自 .env，改后需
+            <strong className="font-medium text-foreground">重启进程</strong>（见{" "}
+            <code className="rounded-md border border-border/60 bg-muted/50 px-1.5 py-0.5 text-xs">src/lib/cold-config.ts</code>）。
+          </>
+        }
+      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>功能开关（Feature Flags）</CardTitle>
+          <p className="font-normal text-sm text-muted-foreground">
+            对应热配置键 <code className="rounded bg-muted px-1">{HOT_CONFIG.APP_FEATURES}</code>
+            ，JSON 存储；此处提供常用项快捷切换，亦可在下表直接编辑原始 JSON。
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ul className="space-y-3 text-sm">
+            <li className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="ff-beta"
+                className="h-4 w-4"
+                checked={Boolean(featureFlags.betaHome)}
+                onChange={() => toggleFlag("betaHome")}
+              />
+              <label htmlFor="ff-beta">betaHome — 实验性首页模块</label>
+            </li>
+            <li className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="ff-api"
+                className="h-4 w-4"
+                checked={Boolean(featureFlags.experimentalApi)}
+                onChange={() => toggleFlag("experimentalApi")}
+              />
+              <label htmlFor="ff-api">experimentalApi — 新接口灰度</label>
+            </li>
+            <li className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="ff-regnav"
+                className="h-4 w-4"
+                checked={Boolean(featureFlags.showRegisterNav)}
+                onChange={() => toggleFlag("showRegisterNav")}
+              />
+              <label htmlFor="ff-regnav">showRegisterNav — 导航显示「注册」（仍需 auth.register_open）</label>
+            </li>
+          </ul>
+          <Button type="button" className="transition-all duration-300" loading={savingFlags} onClick={() => void saveFeatureFlags()}>
+            保存功能开关
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>全部热配置（Key-Value）</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {settingsMessage ? <p className="text-sm text-primary">{settingsMessage}</p> : null}
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : (
+            <div className="w-full max-w-[100vw] overflow-x-auto pb-2 sm:max-w-none">
+              <Table className="min-w-[640px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[220px]">键 key</TableHead>
+                    <TableHead>说明</TableHead>
+                    <TableHead className="min-w-[280px]">值（JSON 或纯文本）</TableHead>
+                    <TableHead className="w-[100px]">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-mono text-xs">{r.key}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{r.description}</TableCell>
+                      <TableCell>
+                        <Input
+                          value={drafts[r.key] ?? ""}
+                          onChange={(e) => setDrafts((d) => ({ ...d, [r.key]: e.target.value }))}
+                          className="font-mono text-xs"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="transition-all duration-300"
+                          loading={savingKey === r.key}
+                          onClick={() => void saveRow(r.key)}
+                        >
+                          保存
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          <Button type="button" variant="ghost" size="sm" className="transition-all duration-300" onClick={() => void load()}>
+            刷新列表
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

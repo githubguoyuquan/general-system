@@ -23,13 +23,15 @@ services:
       AUTH_SECRET: ${AUTH_SECRET}
       AUTH_TRUST_HOST: "true"
     # schema 由本机/CI 执行 make db-push（或 compose run app-dev npm run db:push）同步，避免每次重启都 push
-    # npm run dev 会执行 predev（prisma generate），同步命名卷 node_modules 与 bind-mount 的 prisma/schema
+    # npm run dev；node_modules / .next 使用命名卷，避免宿主（macOS）与容器（Linux）混用编译缓存导致 RSC Manifest 报错
     command: npm run dev
     volumes:
       - ./:/app
       - node_modules:/app/node_modules
+      - next_dot_next:/app/.next
     ports:
       - "3000:3000"
 
 volumes:
   node_modules:
+  next_dot_next:

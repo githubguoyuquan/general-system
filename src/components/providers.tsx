@@ -17,6 +17,9 @@ function AppChrome({ children }: { children: ReactNode }) {
   if (pathname?.startsWith("/admin")) {
     return <>{children}</>;
   }
+  if (pathname?.startsWith("/m")) {
+    return <>{children}</>;
+  }
   return <PublicShell>{children}</PublicShell>;
 }
 

@@ -1,3 +1,5 @@
 import { AdminSettingsPanel } from "@/features/admin-settings/admin-settings-panel";
 
-export default AdminSettingsPanel;
+export default function MAdminSettingsPage() {
+  return <AdminSettingsPanel />;
+}
