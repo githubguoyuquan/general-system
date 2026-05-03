@@ -1,11 +1,24 @@
 FROM node:20-alpine AS base
 WORKDIR /app
-RUN apk add --no-cache libc6-compat
+# openssl: Prisma on musl；ca-certificates: HTTPS to registry / engine downloads
+RUN apk add --no-cache libc6-compat openssl ca-certificates
 
 FROM base AS deps
 COPY package*.json ./
 COPY prisma ./prisma
-RUN npm ci
+# 构建不包含 .env；Prisma 解析 datasource 时部分版本需要该变量
+ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public"
+# npm registry + Prisma 引擎下载偶有 TLS 中断，整轮 npm ci 重试可避免偶发构建失败
+RUN npm config set fetch-retries 5 \
+  && npm config set fetch-retry-mintimeout 20000 \
+  && npm config set fetch-retry-maxtimeout 120000 \
+  && i=1 \
+  && while true; do \
+       npm ci --no-audit --no-fund && break; \
+       [ "$i" -ge 8 ] && exit 1; \
+       sleep $((i * 15)); \
+       i=$((i + 1)); \
+     done
 
 FROM deps AS dev
 ENV NODE_ENV=development

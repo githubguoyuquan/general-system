@@ -1,0 +1,107 @@
+// -----------------------------------------------------------------------------
+// 通用系统模板 · Prisma Schema（第一阶段：鉴权 + 配置中心数据模型）
+// -----------------------------------------------------------------------------
+// 热配置：存于 SystemConfig，运行时可经 /admin/settings 修改，通过 getSysConfig 读取（带缓存）。
+// 冷配置：仅 .env，见 src/lib/cold-config.ts（密钥、数据库连接等，改后需重启进程）。
+// -----------------------------------------------------------------------------
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          String    @default("user")
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+/// 热配置（Key-Value）：value 统一为 JSON 字符串。
+/// 约定键名：app.features 存功能开关 JSON；auth.register_open 等布尔开关可单独成行便于 UI 展示。
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 通用数据字典（与 SystemConfig 热配置分表）：树形层级 + 强类型取值
+// -----------------------------------------------------------------------------
+
+enum DictionaryValueType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+  COLOR
+  IMAGE
+}
+
+model Dictionary {
+  id           String               @id @default(cuid())
+  key          String               @unique
+  label        String
+  description  String?
+  parentId     String?
+  parent       Dictionary?          @relation("DictTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children     Dictionary[]         @relation("DictTree")
+  type         DictionaryValueType
+  valueString  String?              @db.Text
+  valueNumber  Float?
+  valueBoolean Boolean?
+  valueJson    Json?
+  sortOrder    Int                  @default(0)
+  isActive     Boolean              @default(true)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([parentId])
+  @@index([isActive])
+  @@map("dictionaries")
+}
